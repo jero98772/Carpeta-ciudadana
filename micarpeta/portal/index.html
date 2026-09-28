@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MiCarpeta CO · Carpeta Ciudadana</title>
+<style>
+  :root {
+    --fondo: #f4f6fa; --panel: #ffffff; --borde: #e2e7ef; --texto: #17202e; --suave: #5d6b80;
+    --primario: #2f5bd3; --primario-oscuro: #2549ad; --ok: #1b8a5a; --ok-fondo: #e3f5ec;
+    --aviso: #b26b00; --aviso-fondo: #fff3dc; --error: #c23b3b; --error-fondo: #fde8e8;
+    --neutro-fondo: #eef1f6; --sombra: 0 1px 2px rgba(20,30,50,.06), 0 4px 16px rgba(20,30,50,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #0f1420; --panel: #171e2c; --borde: #263044; --texto: #e6ebf3; --suave: #9aa7bb;
+      --primario: #6f93ff; --primario-oscuro: #5a7fe8; --ok: #4cc38a; --ok-fondo: #15352a;
+      --aviso: #f0b24a; --aviso-fondo: #3a2c12; --error: #ff7b7b; --error-fondo: #3d1c1c;
+      --neutro-fondo: #212a3b; --sombra: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--fondo); color: var(--texto); }
+  header { background: var(--panel); border-bottom: 1px solid var(--borde); }
+  .barra { max-width: 1080px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .logo { flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px; background: var(--primario); display: grid; place-items: center; color: #fff; font-weight: 700; }
+  .marca b { display: block; font-size: 16px; } .marca span { font-size: 12px; color: var(--suave); }
+  .barra nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 60px; }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 14px; box-shadow: var(--sombra); padding: 20px; }
+  h1 { font-size: 24px; margin: 0 0 4px; } h2 { font-size: 17px; margin: 0 0 14px; }
+  .sub { color: var(--suave); margin: 0 0 20px; }
+  .rejilla { display: grid; gap: 20px; grid-template-columns: 1fr; }
+  @media (min-width: 900px) { .rejilla.dos { grid-template-columns: 1.1fr .9fr; } .rejilla.carpeta { grid-template-columns: 360px 1fr; } }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
+  input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 9px; background: var(--panel); color: var(--texto); font: inherit; }
+  input:focus, select:focus { outline: 2px solid var(--primario); outline-offset: 0; border-color: transparent; }
+  .fila { display: grid; grid-template-columns: 110px 1fr; gap: 10px; }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 9px; padding: 10px 16px; cursor: pointer; background: var(--primario); color: #fff; }
+  button:hover { background: var(--primario-oscuro); } button:disabled { opacity: .55; cursor: wait; }
+  button.secundario { background: var(--neutro-fondo); color: var(--texto); } button.secundario:hover { background: var(--borde); }
+  button.enlace { background: none; color: var(--primario); padding: 6px 8px; }
+  .ancho { width: 100%; margin-top: 18px; }
+  .pestanas { display: flex; gap: 6px; background: var(--neutro-fondo); padding: 4px; border-radius: 10px; margin-bottom: 8px; }
+  .pestanas button { flex: 1; background: transparent; color: var(--suave); }
+  .pestanas button.activa { background: var(--panel); color: var(--texto); box-shadow: var(--sombra); }
+  .oculto { display: none !important; }
+  .pasos { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .pasos li { display: grid; grid-template-columns: 30px 1fr; gap: 12px; }
+  .pasos .n { width: 30px; height: 30px; border-radius: 50%; background: var(--neutro-fondo); display: grid; place-items: center; font-weight: 700; color: var(--primario); }
+  .pasos b { display: block; } .pasos span { color: var(--suave); font-size: 14px; }
+  .perfil { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 20px; align-items: baseline; }
+  .perfil code { background: var(--neutro-fondo); padding: 2px 8px; border-radius: 6px; }
+  .docs { display: grid; gap: 12px; }
+  .doc { border: 1px solid var(--borde); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; }
+  .doc .cabeza { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .doc .titulo { font-weight: 600; flex: 1; min-width: 160px; }
+  .doc .meta { color: var(--suave); font-size: 13px; word-break: break-all; }
+  .doc .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .doc .acciones button { padding: 7px 12px; font-size: 14px; }
+  .estado { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; letter-spacing: .02em; }
+  .estado.TEMPORAL { background: var(--neutro-fondo); color: var(--suave); }
+  .estado.EN_AUTENTICACION { background: var(--aviso-fondo); color: var(--aviso); }
+  .estado.CERTIFICADO { background: var(--ok-fondo); color: var(--ok); }
+  .vacio { color: var(--suave); text-align: center; padding: 28px 10px; border: 1px dashed var(--borde); border-radius: 12px; }
+  .avisos { display: grid; gap: 10px; margin-top: 8px; }
+  .aviso { border-left: 3px solid var(--primario); padding: 6px 12px; background: var(--neutro-fondo); border-radius: 0 8px 8px 0; }
+  .aviso b { display: block; font-size: 14px; } .aviso span { font-size: 13px; color: var(--suave); white-space: pre-line; }
+  .cuota { height: 6px; background: var(--neutro-fondo); border-radius: 99px; overflow: hidden; margin: 6px 0 2px; }
+  .cuota div { height: 100%; background: var(--primario); }
+  .resultado { margin-top: 16px; padding: 14px 16px; border-radius: 12px; }
+  .resultado.bien { background: var(--ok-fondo); color: var(--ok); } .resultado.mal { background: var(--error-fondo); color: var(--error); }
+  .resultado dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0 0; color: var(--texto); font-size: 14px; }
+  .resultado dt { color: var(--suave); } .resultado dd { margin: 0; word-break: break-all; }
+  #mensajes { position: fixed; right: 16px; bottom: 16px; left: 16px; display: grid; gap: 8px; justify-items: end; pointer-events: none; z-index: 10; }
+  .toast { max-width: 420px; padding: 12px 16px; border-radius: 10px; color: #fff; background: #1d2636; box-shadow: 0 6px 24px rgba(0,0,0,.2); pointer-events: auto; }
+  .toast.error { background: #a83232; } .toast.ok { background: #177a4f; }
+  .toast small { display: block; opacity: .85; }
+</style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <div class="logo">MC</div>
+    <div class="marca"><b>MiCarpeta CO</b><span>Operador de Carpeta Ciudadana</span></div>
+    <nav>
+      <button class="enlace" data-ir="verificar">Verificar un documento</button>
+      <button class="secundario oculto" id="btn-salir">Cerrar sesión</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ============ Acceso ============ -->
+  <section id="vista-acceso" class="rejilla dos">
+    <div class="panel">
+      <div class="pestanas">
+        <button class="activa" data-pestana="login">Iniciar sesión</button>
+        <button data-pestana="registro">Crear mi carpeta</button>
+      </div>
+
+      <form id="form-login">
+        <label for="l-doc">Número de documento</label>
+        <input id="l-doc" name="documento" inputmode="numeric" autocomplete="username" required>
+        <label for="l-pass">Contraseña</label>
+        <input id="l-pass" name="password" type="password" autocomplete="current-password" required>
+        <button class="ancho" type="submit">Entrar</button>
+      </form>
+
+      <form id="form-registro" class="oculto">
+        <div class="fila">
+          <div><label for="r-tipo">Tipo</label>
+            <select id="r-tipo" name="tipo_documento"><option>CC</option><option>CE</option><option>TI</option></select></div>
+          <div><label for="r-doc">Número de documento</label><input id="r-doc" name="documento" inputmode="numeric" required></div>
+        </div>
+        <label for="r-nombre">Nombre completo</label>
+        <input id="r-nombre" name="nombre_completo" autocomplete="name" required>
+        <label for="r-correo">Correo electrónico</label>
+        <input id="r-correo" name="correo" type="email" autocomplete="email" required>
+        <label for="r-dir">Dirección de residencia</label>
+        <input id="r-dir" name="direccion" autocomplete="street-address" required>
+        <label for="r-pass">Contraseña (mínimo 10 caracteres, con letras y números)</label>
+        <input id="r-pass" name="password" type="password" autocomplete="new-password" required minlength="10">
+        <button class="ancho" type="submit">Crear mi carpeta</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>¿Cómo funciona?</h2>
+      <ol class="pasos">
+        <li><div class="n">1</div><div><b>Regístrate</b><span>Verificamos en GovCarpeta que no estés afiliado a otro operador y te afiliamos a MiCarpeta CO.</span></div></li>
+        <li><div class="n">2</div><div><b>Inicia sesión</b><span>Tu cuenta se protege con Argon2id y se bloquea tras 5 intentos fallidos.</span></div></li>
+        <li><div class="n">3</div><div><b>Carga tus documentos</b><span>Se escanean con antivirus y se guardan cifrados con AES-256.</span></div></li>
+        <li><div class="n">4</div><div><b>Autentícalos ante GovCarpeta</b><span>Enviamos una URL temporal (nunca el archivo). Si se aprueba, recibes un sello verificable por cualquier entidad.</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============ Carpeta ============ -->
+  <section id="vista-carpeta" class="oculto">
+    <h1 id="saludo">Mi carpeta</h1>
+    <div class="perfil sub" id="perfil"></div>
+    <div class="rejilla carpeta">
+      <div style="display:grid; gap:20px; align-content:start">
+        <form class="panel" id="form-carga">
+          <h2>Cargar documento</h2>
+          <label for="c-titulo">Título</label>
+          <input id="c-titulo" name="titulo" placeholder="Diploma de pregrado" required minlength="3">
+          <label for="c-tipo">Tipo documental</label>
+          <select id="c-tipo" name="tipo_documental">
+            <option value="DIPLOMA">Diploma</option><option value="ACTA_GRADO">Acta de grado</option>
+            <option value="CERTIFICADO_LABORAL">Certificado laboral</option><option value="CERTIFICADO_ACADEMICO">Certificado académico</option>
+            <option value="CEDULA">Cédula</option><option value="REGISTRO_CIVIL">Registro civil</option>
+            <option value="PASAPORTE">Pasaporte</option><option value="HISTORIA_CLINICA">Historia clínica</option><option value="OTRO">Otro</option>
+          </select>
+          <label for="c-archivo">Archivo (PDF, PNG, JPG o DOCX · máx. 10 MB)</label>
+          <input id="c-archivo" name="archivo" type="file" accept=".pdf,.png,.jpg,.jpeg,.docx" required>
+          <button class="ancho" type="submit">Cargar</button>
+          <div id="cuota" class="sub" style="margin:14px 0 0; font-size:13px"></div>
+        </form>
+        <div class="panel">
+          <h2>Notificaciones</h2>
+          <div class="avisos" id="avisos"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Documentos</h2>
+        <div class="docs" id="docs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Verificación pública ============ -->
+  <section id="vista-verificar" class="oculto">
+    <div class="panel" style="max-width:640px; margin:0 auto">
+      <h1>Verificar un documento</h1>
+      <p class="sub">Para entidades: confirma que un documento fue autenticado ante GovCarpeta por MiCarpeta CO. No necesitas cuenta.</p>
+      <form id="form-verificar">
+        <label for="v-id">Identificador del documento o código de sello</label>
+        <input id="v-id" required placeholder="SELLO-… o el identificador del documento">
+        <label for="v-archivo">Archivo recibido (opcional: comprueba que no fue modificado)</label>
+        <input id="v-archivo" type="file">
+        <button class="ancho" type="submit">Verificar</button>
+      </form>
+      <div id="v-resultado"></div>
+      <button class="enlace" data-ir="inicio" style="margin-top:12px">← Volver</button>
+    </div>
+  </section>
+</main>
+<div id="mensajes" aria-live="polite"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const sesion = { access: null, refresh: null, ciudadano: null };
+const guardar = () => { try { sessionStorage.setItem("micarpeta", JSON.stringify(sesion)); } catch {} };
+try { Object.assign(sesion, JSON.parse(sessionStorage.getItem("micarpeta") || "{}")); } catch {}
+
+function aviso(texto, tipo = "", detalle = "") {
+  const t = document.createElement("div");
+  t.className = `toast ${tipo}`;
+  t.innerHTML = `<b></b>${detalle ? "<small></small>" : ""}`;
+  t.querySelector("b").textContent = texto;
+  if (detalle) t.querySelector("small").textContent = detalle;
+  $("#mensajes").append(t);
+  setTimeout(() => t.remove(), 6000);
+}
+
+class ErrorApi extends Error { constructor(r, cuerpo) { super(cuerpo.title || `Error ${r.status}`); this.estado = r.status; this.cuerpo = cuerpo; } }
+
+async function api(ruta, { metodo = "GET", json, form, cabeceras = {}, auth = true, reintento = true } = {}) {
+  const h = { ...cabeceras };
+  if (json) h["Content-Type"] = "application/json";
+  if (auth && sesion.access) h["Authorization"] = `Bearer ${sesion.access}`;
+  const r = await fetch(ruta, { method: metodo, headers: h, body: json ? JSON.stringify(json) : form });
+  const cuerpo = r.status === 204 ? {} : await r.json().catch(() => ({}));
+  if (r.status === 401 && auth && reintento && sesion.refresh && cuerpo.codigo === "TOKEN_EXPIRADO") {
+    if (await renovar()) return api(ruta, { metodo, json, form, cabeceras, auth, reintento: false });
+  }
+  if (!r.ok) throw new ErrorApi(r, cuerpo);
+  return cuerpo;
+}
+
+async function renovar() {
+  try {
+    const t = await api("/api/v1/auth/refresh", { metodo: "POST", json: { refresh_token: sesion.refresh }, auth: false });
+    sesion.access = t.access_token; sesion.refresh = t.refresh_token; guardar(); return true;
+  } catch { cerrarLocal(); return false; }
+}
+
+function mostrarError(e) {
+  if (e instanceof ErrorApi) {
+    const errores = (e.cuerpo.errores || []).map((x) => `${x.campo}: ${x.mensaje}`).join(" · ");
+    aviso(e.message, "error", errores || e.cuerpo.detail || "");
+  } else aviso("No se pudo conectar con el servidor", "error", String(e));
+}
+
+async function ocupado(boton, fn) {
+  boton.disabled = true;
+  try { await fn(); } catch (e) { mostrarError(e); } finally { boton.disabled = false; }
+}
+
+function ver(nombre) {
+  for (const v of ["acceso", "carpeta", "verificar"]) $(`#vista-${v}`).classList.toggle("oculto", v !== nombre);
+  $("#btn-salir").classList.toggle("oculto", !sesion.access);
+}
+
+document.querySelectorAll("[data-ir]").forEach((b) => b.addEventListener("click", () => {
+  if (b.dataset.ir === "verificar") ver("verificar"); else inicio();
+}));
+document.querySelectorAll("[data-pestana]").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-pestana]").forEach((x) => x.classList.toggle("activa", x === b));
+  $("#form-login").classList.toggle("oculto", b.dataset.pestana !== "login");
+  $("#form-registro").classList.toggle("oculto", b.dataset.pestana !== "registro");
+}));
+
+const datosForm = (f) => Object.fromEntries(new FormData(f).entries());
+
+$("#form-registro").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  ocupado(ev.submitter, async () => {
+    const d = datosForm(ev.target);
+    const c = await api("/api/v1/ciudadanos", { metodo: "POST", json: d, auth: false });
+    aviso("¡Tu carpeta está lista!", "ok", `Tu dirección única es ${c.direccion_unica}`);
+    await entrar(d.documento, d.password);
+  });
+});
+
+$("#form-login").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  ocupado(ev.submitter, async () => { const d = datosForm(ev.target); await entrar(d.documento, d.password); });
+});
+
+async function entrar(documento, password) {
+  const t = await api("/api/v1/auth/login", { metodo: "POST", json: { documento, password }, auth: false });
+  Object.assign(sesion, { access: t.access_token, refresh: t.refresh_token, ciudadano: t.ciudadano });
+  guardar();
+  await inicio();
+}
+
+function cerrarLocal() { Object.assign(sesion, { access: null, refresh: null, ciudadano: null }); guardar(); ver("acceso"); }
+
+$("#btn-salir").addEventListener("click", async () => {
+  try { await api("/api/v1/auth/logout", { metodo: "POST", json: { refresh_token: sesion.refresh } }); } catch {}
+  cerrarLocal();
+});
+
+$("#form-carga").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  ocupado(ev.submitter, async () => {
+    const d = await api("/api/v1/documentos", { metodo: "POST", form: new FormData(ev.target) });
+    aviso("Documento cargado", "ok", `${d.titulo} · estado ${d.estado}`);
+    ev.target.reset();
+    await refrescar();
+  });
+});
+
+const tamano = (b) => b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+const fecha = (iso) => iso ? new Date(iso).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }) : "";
+const etiqueta = { TEMPORAL: "Temporal", EN_AUTENTICACION: "En autenticación", CERTIFICADO: "Certificado" };
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+function tarjeta(d) {
+  const el = document.createElement("div");
+  el.className = "doc";
+  el.innerHTML = `
+    <div class="cabeza"><div class="titulo"></div><span class="estado ${d.estado}">${etiqueta[d.estado] || d.estado}</span></div>
+    <div class="meta"></div>
+    <div class="acciones"></div>`;
+  el.querySelector(".titulo").textContent = d.titulo;
+  el.querySelector(".meta").textContent =
+    `${d.tipo_documental.replaceAll("_", " ").toLowerCase()} · ${tamano(d.tamano_bytes)} · cargado ${fecha(d.fecha_carga)}` +
+    (d.sello ? ` · sello ${d.sello}` : "") + ` · SHA-256 ${d.hash_sha256.slice(0, 16)}…`;
+  const acc = el.querySelector(".acciones");
+  const boton = (texto, clase, fn) => { const b = document.createElement("button"); b.textContent = texto; b.className = clase; b.onclick = () => ocupado(b, fn); acc.append(b); };
+  boton("Ver", "secundario", async () => { const u = await api(`/api/v1/documentos/${d.id}/descarga`); window.open(u.url, "_blank", "noopener"); });
+  if (d.estado === "TEMPORAL") boton("Autenticar ante GovCarpeta", "", () => autenticarDoc(d));
+  if (d.estado === "CERTIFICADO") boton("Copiar enlace de verificación", "secundario", async () => {
+    const enlace = `${location.origin}/#verificar=${d.id}`;
+    try { await navigator.clipboard.writeText(enlace); aviso("Enlace copiado", "ok", enlace); } catch { aviso("Enlace de verificación", "", enlace); }
+  });
+  return el;
+}
+
+async function autenticarDoc(d) {
+  const s = await api(`/api/v1/documentos/${d.id}/autenticacion`, { metodo: "POST", cabeceras: { "Idempotency-Key": uuid() } });
+  aviso("Solicitud enviada a GovCarpeta", "", "Te avisaremos cuando termine.");
+  await refrescar();
+  for (let i = 0; i < 60; i++) {
+    const e = await api(`/api/v1/solicitudes/${s.solicitud_id}`);
+    if (e.estado !== "EN_PROCESO") {
+      if (e.estado === "AUTENTICADO") aviso("Documento autenticado", "ok", d.titulo);
+      else aviso("GovCarpeta no pudo autenticar el documento", "error", e.ultimo_error || "");
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  await refrescar();
+}
+
+async function refrescar() {
+  const [docs, notif] = await Promise.all([api("/api/v1/documentos"), api("/api/v1/notificaciones")]);
+  const lista = $("#docs"); lista.replaceChildren();
+  if (!docs.documentos.length) lista.innerHTML = `<div class="vacio">Aún no tienes documentos. Carga el primero.</div>`;
+  docs.documentos.forEach((d) => lista.append(tarjeta(d)));
+  const q = docs.cuota, pct = Math.min(100, (q.documentos_usados / q.limite_documentos) * 100);
+  $("#cuota").innerHTML = `Cuota: ${q.documentos_usados} de ${q.limite_documentos} documentos · ${tamano(q.bytes_usados)} usados<div class="cuota"><div style="width:${pct}%"></div></div>`;
+  const avisos = $("#avisos"); avisos.replaceChildren();
+  if (!notif.notificaciones.length) avisos.innerHTML = `<div class="sub" style="margin:0">Sin notificaciones.</div>`;
+  for (const n of notif.notificaciones.slice(0, 8)) {
+    const a = document.createElement("div"); a.className = "aviso";
+    a.innerHTML = "<b></b><span></span>";
+    a.querySelector("b").textContent = n.asunto;
+    a.querySelector("span").textContent = `${fecha(n.fecha)} · ${n.cuerpo.split("\n\n")[1] || ""}`;
+    avisos.append(a);
+  }
+}
+
+async function inicio() {
+  if (!sesion.access) return ver("acceso");
+  try {
+    const yo = await api("/api/v1/ciudadanos/yo");
+    $("#saludo").textContent = `Hola, ${yo.nombre_completo.split(" ")[0]}`;
+    const p = $("#perfil");
+    p.innerHTML = "<span>Documento <b></b></span><span>Dirección única <code></code></span><span>Operador <b></b></span>";
+    p.querySelectorAll("b")[0].textContent = `${yo.tipo_documento} ${yo.documento}`;
+    p.querySelector("code").textContent = yo.direccion_unica;
+    p.querySelectorAll("b")[1].textContent = yo.operador;
+    ver("carpeta");
+    await refrescar();
+  } catch (e) { mostrarError(e); cerrarLocal(); }
+}
+
+async function sha256(archivo) {
+  if (!crypto.subtle) return null;
+  const buf = await crypto.subtle.digest("SHA-256", await archivo.arrayBuffer());
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+$("#form-verificar").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const salida = $("#v-resultado");
+  ocupado(ev.submitter, async () => {
+    salida.replaceChildren();
+    const id = $("#v-id").value.trim();
+    const archivo = $("#v-archivo").files[0];
+    const hash = archivo ? await sha256(archivo) : null;
+    let r;
+    try {
+      r = await api(`/api/v1/verificacion/${encodeURIComponent(id)}${hash ? `?hash=${hash}` : ""}`, { auth: false });
+    } catch (e) {
+      if (e instanceof ErrorApi && e.estado === 404) {
+        salida.innerHTML = `<div class="resultado mal"><b>No encontramos un sello de autenticidad para ese identificador.</b></div>`;
+        return;
+      }
+      throw e;
+    }
+    const caja = document.createElement("div");
+    caja.className = `resultado ${r.autentico ? "bien" : "mal"}`;
+    caja.innerHTML = `<b></b><dl></dl>`;
+    caja.querySelector("b").textContent = r.autentico
+      ? "✓ Documento auténtico"
+      : (r.coincide_hash === false ? "✗ El archivo no coincide con el documento autenticado" : "✗ El sello no es válido");
+    const filas = [["Título", r.titulo], ["Sello", r.sello], ["Emisor", r.emisor], ["Autenticado ante", r.autenticado_ante],
+      ["Fecha", fecha(r.fecha_certificacion)], ["SHA-256", r.hash_sha256]];
+    if (r.coincide_hash !== null) filas.push(["Archivo recibido", r.coincide_hash ? "Coincide" : "No coincide"]);
+    for (const [k, v] of filas) { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; caja.querySelector("dl").append(dt, dd); }
+    salida.append(caja);
+  });
+});
+
+const coincidencia = location.hash.match(/^#verificar=(.+)$/);
+if (coincidencia) { $("#v-id").value = decodeURIComponent(coincidencia[1]); ver("verificar"); } else inicio();
+</script>
+</body>
+</html>

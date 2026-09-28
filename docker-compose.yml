@@ -1,0 +1,174 @@
+# MiCarpeta CO · despliegue completo en contenedores
+#
+#   docker compose up --build
+#
+# Portal y API ............ http://localhost:8000
+# Descargas (custodia) .... http://localhost:8004
+# Correos (Mailpit) ....... http://localhost:8025
+# RabbitMQ ................ http://localhost:15672  (guest / guest)
+# MinIO ................... http://localhost:9001
+# GovCarpeta simulador .... http://localhost:8090/api-docs
+# Swagger de cada servicio  http://localhost:800X/docs
+#
+# Para usar la API REAL de GovCarpeta, define en .env:
+#   GOVCARPETA_URL=https://govcarpeta-apis-4905ff3c005b.herokuapp.com
+#   GOVCARPETA_OPERATOR_ID=<id obtenido con scripts/registrar_operador.py>
+
+name: micarpeta-co
+
+x-entorno: &entorno
+  ENTORNO: desarrollo
+  DATABASE_URL: postgresql+asyncpg://micarpeta:micarpeta@postgres:5432/db_{servicio}
+  URL_GATEWAY: http://gateway:8000
+  URL_IDENTIDAD: http://identidad:8001
+  URL_AUTENTICACION: http://autenticacion:8002
+  URL_DOCUMENTOS: http://documentos:8003
+  URL_CUSTODIA: http://custodia:8004
+  URL_CERTIFICACION: http://certificacion:8005
+  URL_INTEROPERABILIDAD: http://interoperabilidad:8006
+  URL_NOTIFICACIONES: http://notificaciones:8008
+  URL_AUDITORIA: http://auditoria:8009
+  BUS: rabbitmq
+  RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+  CACHE: redis
+  REDIS_URL: redis://redis:6379/0
+  ALMACENAMIENTO: s3
+  S3_ENDPOINT: minio:9000
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY:-micarpeta}
+  S3_SECRET_KEY: ${S3_SECRET_KEY:-micarpeta-secreto}
+  URL_PUBLICA_CUSTODIA: ${URL_PUBLICA_CUSTODIA:-http://localhost:8004}
+  SMTP_HOST: mailpit
+  SMTP_PUERTO: "1025"
+  JWT_CLAVE_PRIVADA_ARCHIVO: /app/secretos/jwt_privada.pem
+  ANTIVIRUS: ${ANTIVIRUS:-eicar}
+  CLAMAV_HOST: clamav
+  GOVCARPETA_URL: ${GOVCARPETA_URL:-http://govcarpeta-mock:8090}
+  GOVCARPETA_OPERATOR_ID: ${GOVCARPETA_OPERATOR_ID:-000000000000000000000001}
+
+x-servicio: &servicio
+  build: .
+  image: micarpeta-co:latest
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  depends_on:
+    postgres: { condition: service_healthy }
+    rabbitmq: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+services:
+  # ------------------------------------------------------------------ microservicios
+  gateway:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: gateway, PUERTO: "8000" }
+    ports: ["8000:8000"]
+
+  identidad:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: identidad, PUERTO: "8001" }
+    ports: ["127.0.0.1:8001:8001"]
+
+  autenticacion:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: autenticacion, PUERTO: "8002" }
+    ports: ["127.0.0.1:8002:8002"]
+    volumes: [secretos:/app/secretos]
+
+  documentos:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: documentos, PUERTO: "8003" }
+    ports: ["127.0.0.1:8003:8003"]
+
+  custodia:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: custodia, PUERTO: "8004" }
+    ports: ["8004:8004"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_started }
+
+  certificacion:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: certificacion, PUERTO: "8005" }
+    ports: ["127.0.0.1:8005:8005"]
+
+  interoperabilidad:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: interoperabilidad, PUERTO: "8006" }
+    ports: ["127.0.0.1:8006:8006"]
+
+  notificaciones:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: notificaciones, PUERTO: "8008" }
+    ports: ["127.0.0.1:8008:8008"]
+
+  auditoria:
+    <<: *servicio
+    environment: { <<: *entorno, SERVICIO: auditoria, PUERTO: "8009" }
+    ports: ["127.0.0.1:8009:8009"]
+
+  govcarpeta-mock:
+    build: .
+    image: micarpeta-co:latest
+    restart: unless-stopped
+    environment:
+      SERVICIO: govcarpeta_mock
+      PUERTO: "8090"
+      NOMBRE_OPERADOR: MiCarpeta CO
+      GOVCARPETA_OPERATOR_ID: "000000000000000000000001"
+    ports: ["127.0.0.1:8090:8090"]
+
+  # ------------------------------------------------------------------ infraestructura
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: micarpeta
+      POSTGRES_PASSWORD: micarpeta
+      POSTGRES_DB: micarpeta
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/01-bases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U micarpeta"]
+      interval: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports: ["127.0.0.1:15672:15672"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-micarpeta}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-micarpeta-secreto}
+    ports: ["127.0.0.1:9001:9001"]
+    volumes: [minio:/data]
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["127.0.0.1:8025:8025"]
+
+  clamav:
+    image: clamav/clamav:stable
+    profiles: [antivirus]
+
+volumes:
+  pgdata:
+  minio:
+  secretos:
