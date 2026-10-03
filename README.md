@@ -1,4 +1,5 @@
 # MiCarpeta CO · Operador de Carpeta Ciudadana
+Danna Salazar y Daniel Arango Sohm
 
 Implementación del documento de arquitectura «Carpeta Ciudadana Digital — Operador MiCarpeta CO».
 Son microservicios en FastAPI (Python 3.11+) que cubren los cuatro casos de uso pedidos:
