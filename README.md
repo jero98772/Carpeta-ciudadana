@@ -209,24 +209,8 @@ Dockerfile, docker-compose.yml
 
 ---
 
-## 7. Diferencias con el documento de arquitectura (para corregir el PDF)
 
-1. **validateCitizen está invertido en el documento.** El diagrama 4.1 dice «HTTP 200 → no afiliado» y
-   «HTTP 204 → ya afiliado», y el ADR-003 habla de «204 para ciudadano ya afiliado». La API real hace lo
-   contrario: 200 = ya registrado, 204 = libre. El código sigue la API real.
-2. **Son 9 microservicios, no 8.** La HU-04.6 (bitácora verificable) necesita **MS-09 ms-auditoria**, que ya
-   aparece en los diagramas pero no en la tabla 3.2. Hay que agregarlo a la tabla y cambiar «ocho» por
-   «nueve» en la sección 8.1.
-3. **Sello de autenticidad:** se firma con HMAC-SHA256 en ms-certificacion. El documento habla de HSM
-   (PKCS#11) y TSA (RFC 3161) en ms-firma (MS-10), que no se implementó: sirve dejarlo como trabajo futuro.
-4. **Portal:** es HTML + JavaScript servido por el gateway, no React 18 + Vite.
-5. **Despliegue:** se entrega con docker-compose. EKS, OpenShift, VPN, KMS/HSM y ClamAV obligatorio
-   quedan como diseño (ADR-001), igual que Registraduría y el traslado entre operadores (CU-11).
-6. La sección 8 ya es cierta: 49 pruebas, 12/14/12/11 por caso de uso, todas pasan.
-
----
-
-## 8. Limitaciones conocidas
+## 7. Limitaciones conocidas
 
 - Las tablas se crean al arrancar (`create_all`). Para evolucionar el esquema en producción conviene Alembic.
 - Los eventos se publican después del commit, sin *transactional outbox*: si RabbitMQ cae en ese instante,
